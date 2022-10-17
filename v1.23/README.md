@@ -570,6 +570,23 @@ spec:
     protocol: TCP
 ```
 
+```shell
+# dns 解析
+
+# 一层
+# servicename
+auth-srv
+
+# 二层
+# servicename.namespace
+auth-srv.default
+
+# 五层
+# servicename.namespace.svc.cluster.local
+# cluster.local: 指定的集群域名
+auth-srv.default.svc.cloud.pre
+```
+
 ### 2.4 Ingress
 
 ```yaml
