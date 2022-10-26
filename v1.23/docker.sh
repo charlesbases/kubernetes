@@ -17,6 +17,10 @@ images=(
 "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v1.1.1"
 # kubesphere
 "kubesphere/ks-installer:v3.3.0"
+# calico
+"docker.io/calico/cni:v3.23.2"
+"docker.io/calico/node:v3.23.2"
+"docker.io/calico/kube-controllers:v3.23.2"
 )
 
 remotes=(
@@ -27,7 +31,9 @@ remotes=(
 )
 
 repo="k8s.io"
+
 total_images=${#images[@]}
+total_remotes=${#remotes[@]}
 
 # 镜像拉取
 dockerpull() {

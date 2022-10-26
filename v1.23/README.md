@@ -70,32 +70,33 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   ```shell
   # 下载 apt 依赖包
   sudo apt update && sudo apt install -y apt-transport-https ca-certificates curl
-
+  
   # 下载 Kubernetes 签名密钥
   curl https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg | apt-key add -
-
+  
   # 添加 apt Kubernetes 源
   cat > /etc/apt/sources.list.d/kubernetes.list << EOF
-  deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
+  deb http://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
   EOF
   # sudo sh -c "echo 'deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list"
-
+  
   # 安装 Kubernetes
-  sudo apt update && sudo apt install kubeadm=1.23.9-00 kubelet=1.23.9-00 kubectl=1.23.9-00 -y
-
+  ver=1.21.14-00
+  sudo apt update && sudo apt install kubeadm=${ver} kubelet=${ver} kubectl=${ver} -y
+  
   # 开机启动
   sudo systemctl enable kubelet.service
   sudo systemctl start kubelet.service
-
+  
   # oh-my-zsh plugins
   ···
   autoload -Uz compinit
   compinit
-
+  
   plugins=(git kubectl)
   source <(kubectl completion zsh)
   ···
-
+  
   ```
 
 - ##### centos
@@ -108,28 +109,34 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 
 - #### master
 
+  ```
+  kubeadm init --apiserver-advertise-address=10.63.3.11 --kubernetes-version v1.21.14 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
+  ```
+
+  
+
   ```shell
   # 基础镜像
   kubeadm config images list
-
+  
   # kubeadm init (k8s.gcr.io)
   # kubeadm init --apiserver-advertise-address=192.168.1.10 --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
-
+  
   # kubeadm init (aliyuncs)
   kubeadm init --apiserver-advertise-address=192.168.1.10 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
-
+  
   # 创建 master 账户
   rm -rf $HOME/.kube && mkdir -p $HOME/.kube
   sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   sudo chown $(id -u):$(id -g) $HOME/.kube/config
-
+  
   # token
   kubeadm token create --print-join-command
-
+  
   # [node] kubeadm join ...
-
+  
   # 验证
-  kebuctl get nodes
+  kubectl get nodes
   ```
 
 - #### node
@@ -151,7 +158,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   docker pull docker.io/calico/kube-controllers:v3.23.2
 
   # 部署 CNI 网络插件
-  kubectl apply -f  kube_calico.yaml
+  kubectl apply -f cni-calico.yaml
 
   # 查看状态
   kubectl get pods -n kube-system
