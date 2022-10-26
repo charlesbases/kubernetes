@@ -81,7 +81,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   # sudo sh -c "echo 'deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list"
   
   # 安装 Kubernetes
-  ver=1.21.14-00
+  ver=1.23.9-00
   sudo apt update && sudo apt install kubeadm=${ver} kubelet=${ver} kubectl=${ver} -y
   
   # 开机启动
@@ -109,12 +109,6 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 
 - #### master
 
-  ```
-  kubeadm init --apiserver-advertise-address=10.63.3.11 --kubernetes-version v1.21.14 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
-  ```
-
-  
-
   ```shell
   # 基础镜像
   kubeadm config images list
@@ -138,7 +132,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   # 验证
   kubectl get nodes
   ```
-
+  
 - #### node
 
   ```shell
