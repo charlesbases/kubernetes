@@ -81,8 +81,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   # sudo sh -c "echo 'deb https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main' > /etc/apt/sources.list.d/kubernetes.list"
   
   # 安装 Kubernetes
-  ver=1.23.9-00
-  sudo apt update && sudo apt install kubeadm=${ver} kubelet=${ver} kubectl=${ver} -y
+  sudo apt update && sudo apt reinstall kubeadm=1.24.00-00 kubelet=1.24.00-00 kubectl=1.24.00-00 -y
   
   # 开机启动
   sudo systemctl enable kubelet.service
@@ -98,7 +97,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   ···
   
   ```
-
+  
 - ##### centos
 
   ```shell
@@ -144,18 +143,23 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 - ##### calico
 
   ```shell
-  # kubectl apply -f https://docs.projectcalico.org/v3.23/manifests/calico.yaml
-
+  # kubectl apply -f https://docs.projectcalico.org/v3.21/manifests/calico.yaml
+  
   # 手动拉取镜像
   docker pull docker.io/calico/cni:v3.23.2
   docker pull docker.io/calico/node:v3.23.2
   docker pull docker.io/calico/kube-controllers:v3.23.2
-
+  
   # 部署 CNI 网络插件
   kubectl apply -f cni-calico.yaml
-
+  
   # 查看状态
   kubectl get pods -n kube-system
+  
+  # 卸载
+  kubectl delete -f cni-calico.yaml
+  ## master/node
+  sudo sh -c 'modprobe -r ipip && rm -rf /var/lib/cni /etc/cni/net.d/* && systemctl restart kubelet.service'
   ```
 
 - ##### flannel
@@ -175,6 +179,17 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   ```
 
 ### 1.5. 错误信息
+
+```shell
+# 节点重置
+## master
+sudo kubeadm reset
+rm -rf $HOME/.kube
+## node
+sudo kubeadm reset
+```
+
+
 
 - ##### [ERROR CRI]
 
