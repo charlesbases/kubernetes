@@ -1309,16 +1309,12 @@ kubectl get pods -n kube-system
 journalctl -xeu kubelet | grep cni
 ```
 
+### 3: NodePort 无法访问
 
+```shell
+# 查看 service 是否绑定 pod
+kubectl get endpoints <svc>
 
-Ceph 
+# 注意 selector 一致
+```
 
-Juicefs
-
-nfs
-
-（Seaweedfs）
-
-对象存储
-
-minio
