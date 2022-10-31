@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: map
+  namespace: default
   labels:
     app: kafka
 spec:
@@ -16,8 +16,6 @@ spec:
       labels:
         app: kafka
     spec:
-      nodeSelector:
-        map: "true"
       containers:
         - name: kafka
           image: bitnami/kafka:latest
@@ -28,7 +26,7 @@ spec:
             - name: TZ
               value: "Asia/Shanghai"
             - name: KAFKA_BROKER_ID
-              value: 1
+              value: "1"
             - name: KAFKA_CFG_LISTENERS
               value: "PLAINTEXT://:9092"
             - name: KAFKA_CFG_ADVERTISED_LISTENERS
@@ -42,17 +40,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka
-  namespace: map
+  name: prekafka-srv
+  namespace: default
   labels:
-    app: kafka
+    app: prekafka-srv
 spec:
   type: NodePort
   selector:
-    app: kafka
+    app: prekafka-srv
   ports:
-    - name: kafka-port
+    - name: kafka
       port: 9092
       targetPort: 9092
       nodePort: 30092
-      protocol: TCP
