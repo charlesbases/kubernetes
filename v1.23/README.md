@@ -30,7 +30,7 @@ cat >> /etc/hosts << EOF
 192.168.1.13 kube-node-3
 EOF
 
-# 开启内核模块
+# 开启内核模块(ipvs)
 cat > /etc/modules-load.d/k8s.conf << EOF
 overlay
 br_netfilter
@@ -125,6 +125,8 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   
   # token
   kubeadm token create --print-join-command
+  # token(不过期)
+  kubeadm token create --print-join-command --ttl 0
   
   # [node] kubeadm join ...
   
@@ -188,8 +190,6 @@ rm -rf $HOME/.kube
 ## node
 sudo kubeadm reset
 ```
-
-
 
 - ##### [ERROR CRI]
 
@@ -1236,6 +1236,8 @@ cat > $HOME/.super-kuberctl.sh << EOF
 
 set -e
 
+args=($*)
+
 command="apply"
 
 recursive() {
@@ -1252,13 +1254,14 @@ recursive() {
 
 if [[ $1 = "-a" ]]; then
   command="apply"
-fi
-if [[ $1 = "-d" ]]; then
+  unset args[0]
+elif [[ $1 = "-d" ]]; then
   command="delete"
+  unset args[0]
 fi
 
-for i in "$@"; do
-  recursive $i
+for arg in ${args[@]}; do
+  recursive $arg
 done
 EOF
 
@@ -1316,5 +1319,18 @@ journalctl -xeu kubelet | grep cni
 kubectl get endpoints <svc>
 
 # 注意 selector 一致
+```
+
+### 4: Pod 互不连通
+
+```shell
+# 查看 kube-proxy 模式
+kubectl get configmaps -n kube-system kube-proxy -o yaml | grep mode
+
+# 使用 ipvs 模式
+kubectl edit -n kube-system configmaps kube-proxy
+
+# 重启 kube-proxy
+kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube-proxy | awk '{print $1}')
 ```
 
