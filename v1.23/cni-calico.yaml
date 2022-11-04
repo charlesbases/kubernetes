@@ -1,3 +1,4 @@
+---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Calico installation.
 kind: ConfigMap
@@ -18,7 +19,7 @@ data:
 
   # The CNI network configuration to install on each node. The special
   # values in this config will be automatically populated.
-  cni_network_config: |
+  cni_network_config: |-
     {
       "name": "k8s-pod-network",
       "cniVersion": "0.3.1",
@@ -29,29 +30,25 @@ data:
           "log_file_path": "/var/log/calico/cni/cni.log",
           "datastore_type": "kubernetes",
           "nodename": "__KUBERNETES_NODE_NAME__",
-          "mtu": "__CNI_MTU__",
+          "mtu": __CNI_MTU__,
           "ipam": {
-            "type": "calico-ipam"
+              "type": "calico-ipam"
           },
           "policy": {
-            "type": "k8s"
+              "type": "k8s"
           },
           "kubernetes": {
-            "kubeconfig": "__KUBECONFIG_FILEPATH__"
+              "kubeconfig": "__KUBECONFIG_FILEPATH__"
           }
         },
         {
           "type": "portmap",
           "snat": true,
-          "capabilities": {
-            "portMappings": true
-          }
+          "capabilities": {"portMappings": true}
         },
         {
           "type": "bandwidth",
-          "capabilities": {
-            "bandwidth": true
-          }
+          "capabilities": {"bandwidth": true}
         }
       ]
     }
@@ -847,6 +844,11 @@ spec:
                   node appears to use the IP of the ingress node; this requires a
                   permissive L2 network.  [Default: Tunnel]'
                   type: string
+                bpfHostConntrackBypass:
+                  description: 'BPFHostConntrackBypass Controls whether to bypass Linux
+                  conntrack in BPF mode for workloads and services. [Default: true
+                  - bypass Linux conntrack]'
+                  type: boolean
                 bpfKubeProxyEndpointSlicesEnabled:
                   description: BPFKubeProxyEndpointSlicesEnabled in BPF mode, controls
                     whether Felix's embedded kube-proxy accepts EndpointSlices or not.
@@ -906,10 +908,10 @@ spec:
                     - type: string
                   description: 'BPFPSNATPorts sets the range from which we randomly
                   pick a port if there is a source port collision. This should be
-                  within the ephemeral range as defined by RFC 6056 (1024鈥�65535) and
+                  within the ephemeral range as defined by RFC 6056 (1024–65535) and
                   preferably outside the  ephemeral ranges used by common operating
-                  systems. Linux uses 32768鈥�60999, while others mostly use the IANA
-                  defined range 49152鈥�65535. It is not necessarily a problem if this
+                  systems. Linux uses 32768–60999, while others mostly use the IANA
+                  defined range 49152–65535. It is not necessarily a problem if this
                   range overlaps with the operating systems. Both ends of the range
                   are inclusive. [Default: 20000:29999]'
                   pattern: ^.*
@@ -1043,7 +1045,6 @@ spec:
                     are auto-detected.
                   type: string
                 floatingIPs:
-                  default: Disabled
                   description: FloatingIPs configures whether or not Felix will program
                     floating IP addresses.
                   enum:
@@ -1366,8 +1367,8 @@ spec:
                   type: boolean
                 vxlanEnabled:
                   description: 'VXLANEnabled overrides whether Felix should create the
-                  VXLAN tunnel device for VXLAN networking. Optional as Felix determines
-                  this based on the existing IP pools. [Default: nil (unset)]'
+                  VXLAN tunnel device for IPv4 VXLAN networking. Optional as Felix
+                  determines this based on the existing IP pools. [Default: nil (unset)]'
                   type: boolean
                 vxlanMTU:
                   description: 'VXLANMTU is the MTU to set on the IPv4 VXLAN tunnel
@@ -4095,6 +4096,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: calico-node
 rules:
+  # Used for creating service account tokens to be used by the CNI plugin
+  - apiGroups: [ "" ]
+    resources:
+      - serviceaccounts/token
+    resourceNames:
+      - calico-node
+    verbs:
+      - create
   # The CNI plugin needs to get pods, nodes, and namespaces.
   - apiGroups: [ "" ]
     resources:
@@ -4157,14 +4166,6 @@ rules:
       - pods/status
     verbs:
       - patch
-  # Used for creating service account tokens to be used by the CNI plugin
-  - apiGroups: [ "" ]
-    resources:
-      - serviceaccounts/token
-    resourceNames:
-      - calico-node
-    verbs:
-      - create
   # Calico monitors various CRDs for config.
   - apiGroups: [ "crd.projectcalico.org" ]
     resources:
@@ -4312,7 +4313,7 @@ spec:
         # It can be deleted if this is a fresh installation, or if you have already
         # upgraded to use calico-ipam.
         - name: upgrade-ipam
-          image: docker.io/calico/cni:v3.23.2
+          image: docker.io/calico/cni:v3.23.5
           command: [ "/opt/cni/bin/calico-ipam", "-upgrade" ]
           envFrom:
             - configMapRef:
@@ -4339,7 +4340,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: docker.io/calico/cni:v3.23.2
+          image: docker.io/calico/cni:v3.23.5
           command: [ "/opt/cni/bin/install" ]
           envFrom:
             - configMapRef:
@@ -4377,12 +4378,36 @@ spec:
               name: cni-net-dir
           securityContext:
             privileged: true
+        # This init container mounts the necessary filesystems needed by the BPF data plane
+        # i.e. bpf at /sys/fs/bpf and cgroup2 at /run/calico/cgroup. Calico-node initialisation is executed
+        # in best effort fashion, i.e. no failure for errors, to not disrupt pod creation in iptable mode.
+        - name: "mount-bpffs"
+          image: docker.io/calico/node:v3.23.5
+          command: [ "calico-node", "-init", "-best-effort" ]
+          volumeMounts:
+            - mountPath: /sys/fs
+              name: sys-fs
+              # Bidirectional is required to ensure that the new mount we make at /sys/fs/bpf propagates to the host
+              # so that it outlives the init container.
+              mountPropagation: Bidirectional
+            - mountPath: /var/run/calico
+              name: var-run-calico
+              # Bidirectional is required to ensure that the new mount we make at /run/calico/cgroup propagates to the host
+              # so that it outlives the init container.
+              mountPropagation: Bidirectional
+            # Mount /proc/ from host which usually is an init program at /nodeproc. It's needed by mountns binary,
+            # executed by calico-node, to mount root cgroup2 fs at /run/calico/cgroup to attach CTLB programs correctly.
+            - mountPath: /nodeproc
+              name: nodeproc
+              readOnly: true
+          securityContext:
+            privileged: true
       containers:
         # Runs calico-node container on each Kubernetes node. This
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: docker.io/calico/node:v3.23.2
+          image: docker.io/calico/node:v3.23.5
           envFrom:
             - configMapRef:
                 # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
@@ -4442,8 +4467,8 @@ spec:
             # The default IPv4 pool to create on startup if none exists. Pod IPs will be
             # chosen from this range. Changing this value after installation will have
             # no effect. This should fall within `--cluster-cidr`.
-            # - name: CALICO_IPV4POOL_CIDR
-            #   value: "192.168.0.0/16"
+            - name: CALICO_IPV4POOL_CIDR
+              value: "192.168.0.0/16"
             # Disable file logging so `kubectl logs` works.
             - name: CALICO_DISABLE_FILE_LOGGING
               value: "true"
@@ -4505,11 +4530,8 @@ spec:
               mountPath: /var/run/nodeagent
             # For eBPF mode, we need to be able to mount the BPF filesystem at /sys/fs/bpf so we mount in the
             # parent directory.
-            - name: sysfs
-              mountPath: /sys/fs/
-              # Bidirectional means that, if we mount the BPF filesystem at /sys/fs/bpf it will propagate to the host.
-              # If the host is known to mount that filesystem already then Bidirectional can be omitted.
-              mountPropagation: Bidirectional
+            - name: bpffs
+              mountPath: /sys/fs/bpf
             - name: cni-log-dir
               mountPath: /var/log/calico/cni
               readOnly: true
@@ -4528,10 +4550,18 @@ spec:
           hostPath:
             path: /run/xtables.lock
             type: FileOrCreate
-        - name: sysfs
+        - name: sys-fs
           hostPath:
             path: /sys/fs/
             type: DirectoryOrCreate
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: Directory
+        # mount /proc at /nodeproc to be used by mount-bpffs initContainer to mount root cgroup2 fs.
+        - name: nodeproc
+          hostPath:
+            path: /proc
         # Used to install CNI.
         - name: cni-bin-dir
           hostPath:
@@ -4599,7 +4629,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: calico-kube-controllers
-          image: docker.io/calico/kube-controllers:v3.23.2
+          image: docker.io/calico/kube-controllers:v3.23.5
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS
@@ -4655,4 +4685,3 @@ spec:
 
 ---
 # Source: calico/templates/configure-canal.yaml
-

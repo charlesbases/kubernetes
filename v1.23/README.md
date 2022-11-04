@@ -113,10 +113,10 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   kubeadm config images list
   
   # kubeadm init (k8s.gcr.io)
-  # kubeadm init --apiserver-advertise-address=192.168.1.10 --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
+  # kubeadm init --apiserver-advertise-address=192.168.1.10 --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=192.168.0.0/16
   
   # kubeadm init (aliyuncs)
-  kubeadm init --apiserver-advertise-address=192.168.1.10 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=10.244.0.0/16
+  kubeadm init --apiserver-advertise-address=192.168.1.10 --image-repository registry.aliyuncs.com/google_containers --kubernetes-version v1.23.9 --service-cidr=10.96.0.0/12  --pod-network-cidr=192.168.0.0/16
   
   # 创建 master 账户
   rm -rf $HOME/.kube && mkdir -p $HOME/.kube
@@ -145,7 +145,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 - ##### calico
 
   ```shell
-  # kubectl apply -f https://docs.projectcalico.org/v3.21/manifests/calico.yaml
+  # kubectl apply -f https://docs.projectcalico.org/v3.23/manifests/calico.yaml
   
   # 手动拉取镜像
   docker pull docker.io/calico/cni:v3.23.2
@@ -174,7 +174,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
   docker pull flannelcni/flannel-cni-plugin:v1.1.0
   
   # 部署 CNI 网络插件
-  kubectl apply -f  kube-flannel.yaml
+  kubectl apply -f kube-flannel.yaml
   
   # 查看状态
   kubectl get pods -n kube-system
@@ -184,11 +184,14 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 
 ```shell
 # 节点重置
+
 ## master
 sudo kubeadm reset
-rm -rf $HOME/.kube
+sudo rm -rf $HOME/.kube /etc/cni/net.d/ /var/lib/cni/calico
+
 ## node
 sudo kubeadm reset
+sudo rm -rf /etc/cni/net.d/ /var/lib/cni/calico
 ```
 
 - ##### [ERROR CRI]
@@ -245,6 +248,19 @@ sudo kubeadm reset
 
   ```shell
   
+  ```
+  
+- ##### coredns ContainerCreating
+
+  ```shell
+  # coredns 未就绪与 cni 插件有必然联系
+  kubectl describe pods -n kube-system  calico-
+  
+  # 删除节点上 cni 安装信息
+  sudo rm -rf /etc/cni/net.d/* /var/lib/cni/calico
+  
+  # 重启 kubelet
+  sudo systemctl restart kubelet
   ```
 
 --------
