@@ -58,9 +58,12 @@ EOF
 sysctl --system
 
 # 时间同步
+## netdate 系统时间
 sudo apt install ntpdata -y
-ntpdate time.windows.com
+ntpdate time.windows.coml
 sudo timedatectl set-timezone 'Asia/Shanghai'
+## hwclock 硬件时间
+sudo hwclock -w
 ```
 
 ### 1.2. 组件安装
@@ -253,6 +256,8 @@ sudo rm -rf /etc/cni/net.d/ /var/lib/cni/calico
 - ##### coredns ContainerCreating
 
   ```shell
+  # 查看 cni 版本是否与 kubernetes 版本兼容
+  
   # coredns 未就绪与 cni 插件有必然联系
   kubectl describe pods -n kube-system  calico-
   
@@ -767,14 +772,13 @@ spec:
   apiVersion: storage.k8s.io/v1
   metadata:
     name: storage-local
-    namespace: app
     annotations:
     	"storageclass.kubernetes.io/is-default-class": "true"
   reclaimPolicy: Retain
   provisioner: kubernetes.io/no-provisioner
   volumeBindingMode: WaitForFirstConsumer
   ```
-
+  
 - ##### nfs
 
   ```yaml
@@ -802,6 +806,40 @@ spec:
   parameters:
     server: 192.168.1.10
     path: /data/nfs
+  ```
+  
+- ##### juicefs
+
+  ```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: juicefs-sc-secret
+    namespace: kube-system
+  type: Opaque
+  stringData:
+    name: "juicefs"
+    metaurl: "redis://user:password.@192.168.1.10:6379/1"
+    storage: "s3"
+    bucket: "http://192.168.1.10:9000/juicefs"
+    access-key: "minioadmin"
+    secret-key: "minioadmin"
+  
+  ---
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: juicefs-sc
+    annotations:
+      "storageclass.kubernetes.io/is-default-class": "true"
+  provisioner: csi.juicefs.com
+  reclaimPolicy: Retain
+  volumeBindingMode: WaitForFirstConsumer
+  parameters:
+    csi.storage.k8s.io/node-publish-secret-name: juicefs-sc-secret
+    csi.storage.k8s.io/node-publish-secret-namespace: kube-system
+    csi.storage.k8s.io/provisioner-secret-name: juicefs-sc-secret
+    csi.storage.k8s.io/provisioner-secret-namespace: kube-system
   ```
 
 ### 2.8 PersistentVolume
@@ -1111,19 +1149,34 @@ kubectl get pod -n kubesphere-system
 
 ------
 
-```shell
-# 创建 namespace
-kubectl create namespace app
-# 配置首选 namespace
-kubectl config set-context --current --namespace=app
+- ##### namespace
 
-# 查看节点标签
-kubectl get nodes --show-labels
-# 添加节点标签
-kubectl label nodes <node-name> <label-key>=<label-value>
-# 删除标签
-kubectl label nodes <node-name> <label-key>-
-```
+  ```shell
+  # 创建 namespace
+  kubectl create namespace app
+  # 配置首选 namespace
+  kubectl config set-context --current --namespace=app
+  ```
+  
+- ##### label
+
+  ```shell
+  # 查看节点标签
+  kubectl get nodes --show-labels
+  # 添加节点标签
+  kubectl label nodes <node-name> <label-key>=<label-value>
+  # 删除标签
+  kubectl label nodes <node-name> <label-key>-
+  ```
+
+- ##### master:NoSchedule
+
+  ```shell
+  # 查看 master 节点
+  kubectl describe nodes kube-master
+  # 去除污点
+  kubectl taint nodes kube-master node-role.kubernetes.io/master:NoSchedule-
+  ```
 
 ------
 
@@ -1349,4 +1402,3 @@ kubectl edit -n kube-system configmaps kube-proxy
 # 重启 kube-proxy
 kubectl delete -n kube-system pods $(kubectl get pods -n kube-system | grep kube-proxy | awk '{print $1}')
 ```
-
