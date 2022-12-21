@@ -24,8 +24,8 @@
 
 ```shell
 # 联网安装
-kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.0/kubesphere-installer.yaml
-kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.0/cluster-configuration.yaml
+kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.1/kubesphere-installer.yaml
+kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.1/cluster-configuration.yaml
 ```
 
 ```shell
@@ -45,4 +45,3 @@ kubectl logs -n kubesphere-system $(kubectl get pod -n kubesphere-system -l 'app
 ```shell
 kubectl get svc/ks-console -n kubesphere-system
 ```
-

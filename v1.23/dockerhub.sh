@@ -5,18 +5,16 @@ set -e
 images="images.txt"
 repository="192.168.10.10:12345/kubernetes"
 
-backfile="images.bak.txt"
-
 repo() {
-  if [[ ! -f "$backfile" ]]; then
-    cat >> $backfile << EOF
+  if [[ ! -f "images.bak.txt" ]]; then
+    cat >> "images.bak.txt" << EOF
 $1
 EOF
   return
   fi
 
-  if [[ -z `cat $backfile | grep $1` ]]; then
-    cat >> $backfile << EOF
+  if [[ -z `cat "images.bak.txt" | grep $1` ]]; then
+    cat >> "images.bak.txt" << EOF
 $1
 EOF
   fi
@@ -55,7 +53,7 @@ main
 # docker-push
 read -sp "镜像推送(Y/N): " isPush
 if [[ $isPush =~ ^[yY]+$ ]]; then
-  cat $backfile |  while read image; do
+  cat "images.bak.txt" |  while read image; do
     docker push $image
   done
 fi

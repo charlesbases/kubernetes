@@ -227,7 +227,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - edgeruntime.kubesphere.io
+  - kubeedge.kubesphere.io
   resources:
   - '*'
   verbs:
@@ -273,21 +273,23 @@ metadata:
   name: ks-installer
   namespace: kubesphere-system
   labels:
-    app: ks-installer
+    app: ks-install
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ks-installer
+      app: ks-install
   template:
     metadata:
       labels:
-        app: ks-installer
+        app: ks-install
     spec:
+      nodeSelector:
+        kubesphere: true
       serviceAccountName: ks-installer
       containers:
       - name: installer
-        image: kubesphere/ks-installer:v3.3.0
+        image: kubesphere/ks-installer:v3.2.1
         imagePullPolicy: "Always"
         resources:
           limits:

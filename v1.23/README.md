@@ -1305,31 +1305,25 @@ cat > $HOME/.super-kuberctl.sh << EOF
 
 set -e
 
-args=($*)
-
 command="apply"
 
 recursive() {
   local base=$1
-  if [[ -d "$base" ]]; then
+  if [[ "${base##*.}" = "yaml" ]]; then
+    kubectl $command -f $base
+  elif [[ -d "$base" ]]; then
     local subs=($(ls $base))
     for sub in "${subs[@]}"; do
       recursive $base/$sub
     done
-  elif [[ "${base##*.}" = "yaml" ]]; then
-    kubectl $command -f $base
   fi
 }
 
-if [[ $1 = "-a" ]]; then
-  command="apply"
-  unset args[0]
-elif [[ $1 = "-d" ]]; then
-  command="delete"
-  unset args[0]
+if [[ $1 = "-d" ]]; then
+  command = "delete"
 fi
 
-for arg in ${args[@]}; do
+for arg in $@; do
   recursive $arg
 done
 EOF
