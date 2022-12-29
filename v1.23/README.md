@@ -634,27 +634,24 @@ auth-srv.default.svc.cloud.pre
 ```
 
 ```yaml
-kind: Ingress
 apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: frontend-ingress
-  namespace: app
-  labels:
-    name: nginx-ingress
-    version: v1.0.0
+  name: nginx
+  namespace: default
 spec:
   ingressClassName: nginx
   rules:
-    - host: example.frontend.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: frontend
-                port:
-                  number: 8080
+  - host: demo.k8s.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: nginx
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
 ```
 
 ### 2.5 DaemonSet
@@ -1024,16 +1021,61 @@ spec:
 
 ## 5. secret
 
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mysecret
-type: Opaque
-data:
-  key: key
-  value: value
-```
+- ##### kubernetes.io/tls
+
+  ```yaml
+  kind: Secret
+  apiVersion: v1
+  metadata:
+    name: https
+    namespace: default
+  data:
+    tls.crt: >-
+      LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUNNakNDQWRpZ0F3SUJBZ0lVV2dNMWxSaEJ6RFhqY3JwdFo1K21BWXBWQmljd0NnWUlLb1pJemowRUF3SXcKUnpFTE1Ba0dBMVVFQmhNQ1EwNHhFakFRQmdOVkJBZ1RDVU5JVDA1SFVVbE9SekVTTUJBR0ExVUVCeE1KUTBoUApUa2RSU1U1SE1SQXdEZ1lEVlFRREV3ZGphR0Z1WjJGdU1CNFhEVEl5TURrd05qQXlNak13TUZvWERUTXlNRGt3Ck16QXlNak13TUZvd1N6RUxNQWtHQTFVRUJoTUNRMDR4RWpBUUJnTlZCQWdUQ1VOSVQwNUhVVWxPUnpFU01CQUcKQTFVRUJ4TUpRMGhQVGtkUlNVNUhNUlF3RWdZRFZRUURFd3RqYUdGdVoyRnVMbU52YlRCWk1CTUdCeXFHU000OQpBZ0VHQ0NxR1NNNDlBd0VIQTBJQUJLZWVhY29ublhrMzdGcU1IQllqUTR6cCs2OVF0eE16bXdqVWc2dkxScFNLClB2ODZmQ3N3N2s5blZ1K3VCT2drTHEzYkt6bnhVR2hYT3QzRWF1bGhSOVNqZ1owd2dab3dEZ1lEVlIwUEFRSC8KQkFRREFnV2dNQk1HQTFVZEpRUU1NQW9HQ0NzR0FRVUZCd01CTUF3R0ExVWRFd0VCL3dRQ01BQXdIUVlEVlIwTwpCQllFRkw3RkIvS3FSWS9VZUtvdVNXT1p1K2dycGo4aE1COEdBMVVkSXdRWU1CYUFGTThPQ1lRR2RMNi9jcmJRCkdhTmxwaDYzZ2x0dk1DVUdBMVVkRVFRZU1CeUNDMk5vWVc1bllXNHVZMjl0Z2cwcUxtTm9ZVzVuWVc0dVkyOXQKTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDSUFub3I3SHVqUTJLTHZQSGV2Y01oakh3VjNNdzBuK2h5Rlc0TDYrOQpGRjU0QWlFQTBjWmpmc1paRlROdDBtaWU3K3Z1ZGQ0KzRDbTVKLzJoYm1QeUw4b05mS3M9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0=
+    tls.key: >-
+      LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUFFU1NvTUk0WXh3M0hGMmlRblFicU5rQ1ZRZzlsd3VBOWlhWFd3TTJZdllvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFcDU1cHlpZWRlVGZzV293Y0ZpTkRqT243cjFDM0V6T2JDTlNEcTh0R2xJbysvenA4S3pEdQpUMmRXNzY0RTZDUXVyZHNyT2ZGUWFGYzYzY1JxNldGSDFBPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQ==
+  type: kubernetes.io/tls
+  
+  ```
+
+  ```yaml
+  kind: Ingress
+  apiVersion: networking.k8s.io/v1
+  metadata:
+    name: web-ingress
+    namespace: default
+  spec:
+    tls:
+      - hosts:
+          - demo.k8s.com
+        secretName: https
+    rules:
+      - host: demo.k8s.com
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: web
+                  port:
+                    number: 8080
+  ```
+
+  
+
+- ##### Opaque
+
+  ```yaml
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: mysecret
+  type: Opaque
+  data:
+    key: key
+    value: value
+  ```
 
 ## 6. volumes
 
@@ -1132,7 +1174,80 @@ spec:
             storage: 512Mi
 ```
 
-## 7. KubeSphere
+## 7. Ingress
+
+```shell
+# wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml nginx-ingress.yaml
+
+# 镜像搬运
+# grep -E ' *image:' nginx-ingress.yaml | sed 's/ *image: //' | sort | uniq
+
+# 修改 Service 代理方式
+sed -i -s 's/  type: LoadBalancer/  type: ClusterIP/' nginx-ingress.yaml
+
+# 暴露 80/443 端口
+···
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname="k8s-master"
+      # 使用本机网络
+      hostNetwork: true
+···
+
+# kubectl apply -f deploy.yaml
+```
+
+- ##### ConfigMap
+
+  ```
+  https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
+  ```
+
+  ```yaml
+  apiVersion: v1
+  kind: ConfigMap
+  data:
+    ...
+  metadata:
+    name: nginx-ingress-controller
+    namespace: nginx-ingress
+  ```
+
+- ##### Annotations
+
+  ```
+  https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/
+  ```
+
+  ```yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: nginx
+    namespace: default
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: demo.k8s.com
+      http:
+        paths:
+        - backend:
+            service:
+              name: nginx
+              port:
+                number: 8080
+          path: /
+          pathType: Prefix
+  ```
+
+## 8. KubeSphere
 
 ```shell
 # 前置
@@ -1145,7 +1260,7 @@ kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3
 kubectl get pod -n kubesphere-system
 ```
 
-## 8. kubectl-command
+## 9. kubectl-command
 
 ------
 
@@ -1287,7 +1402,7 @@ kubectl get pod -n kubesphere-system
 
 --------
 
-## 9. scripts
+## 10. scripts
 
 ### 1. super kubectl
 
@@ -1339,7 +1454,7 @@ source $HOME/.zshrc
 
 --------
 
-## 10. 问题排查
+## 11. 问题排查
 
 ```shell
 # 查看 kubelet 日志
