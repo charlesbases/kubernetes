@@ -1196,6 +1196,8 @@ spec:
         kubernetes.io/hostname="k8s-master"
       # 使用本机网络
       hostNetwork: true
+    containers:
+    - ...
 ···
 
 # kubectl apply -f deploy.yaml
