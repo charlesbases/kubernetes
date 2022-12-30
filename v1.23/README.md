@@ -1252,14 +1252,11 @@ spec:
 ## 8. KubeSphere
 
 ```shell
-# 前置
+# 最小化安装
+# https://kubesphere.io/zh/docs/v3.3/quick-start/minimal-kubesphere-on-k8s/
 
-# v3.3.0
-kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.0/kubesphere-installer.yaml
-kubectl apply -f https://github.com/kubesphere/ks-installer/releases/download/v3.3.0/cluster-configuration.yaml
-
-# 查看状态
-kubectl get pod -n kubesphere-system
+# 离线安装
+# https://kubesphere.io/zh/docs/v3.3/installing-on-kubernetes/on-prem-kubernetes/install-ks-on-linux-airgapped/
 ```
 
 ## 9. kubectl-command
