@@ -6,7 +6,7 @@
 
 ## 1. 安装
 
-### 1.1. 依赖安装
+### 1. 依赖安装
 
 ```shell
 # 关闭防火墙
@@ -66,7 +66,7 @@ sudo timedatectl set-timezone 'Asia/Shanghai'
 sudo hwclock -w
 ```
 
-### 1.2. 组件安装
+### 2. 组件安装
 
 - ##### debian 11
 
@@ -107,7 +107,7 @@ sudo hwclock -w
   
   ```
 
-### 1.3. 服务启动
+### 3. 服务启动
 
 - #### master
 
@@ -143,7 +143,7 @@ sudo hwclock -w
   # kubeadm join ...
   ```
 
-### 1.4. 网络插件
+### 4. 网络插件
 
 - ##### calico
 
@@ -183,7 +183,7 @@ sudo hwclock -w
   kubectl get pods -n kube-system
   ```
 
-### 1.5. 错误信息
+### 5. 错误信息
 
 ```shell
 # 节点重置
@@ -486,7 +486,7 @@ spec:
 
 ```
 
-### 2.1 ConfigMap
+### 1. ConfigMap
 
 ```yaml
 # 存储不加密数据。多用于配置文件
@@ -507,7 +507,7 @@ data:
     }
 ```
 
-### 2.2 Deployment
+### 2. Deployment
 
 ```yaml
 # 无状态应用
@@ -572,7 +572,7 @@ spec:
             name: nginx.conf
 ```
 
-### 2.3 Service
+### 3. Service
 
 ```yaml
 # 防止 Pod 失去连接、负载均衡
@@ -624,7 +624,7 @@ auth-srv.default
 auth-srv.default.svc.cloud.pre
 ```
 
-### 2.4 Ingress
+### 4. Ingress
 
 ```yaml
 # 向外暴露应用
@@ -654,7 +654,7 @@ spec:
         pathType: Prefix
 ```
 
-### 2.5 DaemonSet
+### 5. DaemonSet
 
 ```yaml
 # 守护进程。每个 node 运行一个此 Pod
@@ -685,7 +685,7 @@ spec:
       ...
 ```
 
-### 2.6 StatefulSet
+### 6. StatefulSet
 
 ```yaml
 # 有状态应用
@@ -760,7 +760,7 @@ spec:
                 path: my.cnf
 ```
 
-### 2.7 StorageClass
+### 7. StorageClass
 
 - ##### local
 
@@ -839,7 +839,7 @@ spec:
     csi.storage.k8s.io/provisioner-secret-namespace: kube-system
   ```
 
-### 2.8 PersistentVolume
+### 8. PersistentVolume
 
 - ##### PersistentVolume
 
@@ -904,7 +904,7 @@ spec:
         storage: 512Mi
   ```
 
-### 2.9 HPA
+### 9. HPA
 
 ```yaml
 # Pod 横向自动扩容。根据 Pod 资源利用率，自动伸缩 Pod
@@ -931,7 +931,7 @@ spec:
 
 --------
 
-### 2.10 Job/CronJob
+### 10. Job/CronJob
 
 - ##### Job
 
@@ -957,7 +957,7 @@ spec:
 
 ------
 
-## 3. [helm](https://helm.sh/zh/docs/)
+## 5. [helm](https://helm.sh/zh/docs/)
 
 ```shell
 1. helm: 命令行工具
@@ -1019,7 +1019,9 @@ spec:
   ···
   ```
 
-## 5. secret
+------
+
+## 6. secret
 
 - ##### kubernetes.io/tls
 
@@ -1077,9 +1079,11 @@ spec:
     value: value
   ```
 
-## 6. volumes
+------
 
-### 6.1 hostPath
+## 7. volumes
+
+### 1. hostPath
 
 ```yaml
 kind: Deployment
@@ -1106,7 +1110,7 @@ spec:
             path: /etc/localtime
 ```
 
-### 6.2 configMap
+### 2. configMap
 
 ```yaml
 kind: Deployment
@@ -1127,7 +1131,7 @@ spec:
             name: nginx.conf
 ```
 
-### 6.3 pvc
+### 3. pvc
 
 ```yaml
 kind: Deployment
@@ -1174,7 +1178,9 @@ spec:
             storage: 512Mi
 ```
 
-## 7. Ingress
+------
+
+## 8. Ingress
 
 ```shell
 # wget https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.5.1/deploy/static/provider/cloud/deploy.yaml nginx-ingress.yaml
@@ -1249,7 +1255,9 @@ spec:
           pathType: Prefix
   ```
 
-## 8. KubeSphere
+------
+
+## 9. KubeSphere
 
 ```shell
 # 最小化安装
@@ -1259,7 +1267,25 @@ spec:
 # https://kubesphere.io/zh/docs/v3.3/installing-on-kubernetes/on-prem-kubernetes/install-ks-on-linux-airgapped/
 ```
 
-## 9. kubectl-command
+```shell
+# kubesphere 相关镜像地址为 ${local_registry}/kubesphere/*
+```
+
+- ###### node_exportes: 9100 address already in use
+
+  ```shell
+  # 方法一: 修改 kubesphere-configuration.yaml
+  ···
+      node_exporter:
+        port: 9100
+  ···
+  
+  # 方法二: 修改 Kubernetes 资源
+  kubectl edit -n kubesphere-monitoring-system ds node-exporter
+  kubectl edit -n kubesphere-monitoring-system svc node-exporter
+  ```
+
+## 10. kubectl-command
 
 ------
 
@@ -1401,7 +1427,7 @@ spec:
 
 --------
 
-## 10. scripts
+## 11. scripts
 
 ### 1. super kubectl
 
@@ -1453,7 +1479,7 @@ source $HOME/.zshrc
 
 --------
 
-## 11. 问题排查
+## 12. 问题排查
 
 ```shell
 # 查看 kubelet 日志
